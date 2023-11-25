@@ -17,6 +17,6 @@ public class RequestResupplyConsumer {
     public void consume(RequestResupplyEvent event) throws InterruptedException {
         // Call ProductService and update quantities in stock in DB
         List<ResupplyOrderLineDto> productsToResupplyDtos = event.getResupplyOrderLineDtos();
-        supplierService.createResupplyOrder(productsToResupplyDtos);
+        supplierService.createAndSendResupplyOrder(productsToResupplyDtos);
     }
 }

@@ -22,7 +22,7 @@ public class SupplierService {
 
     private final SupplierRepository supplierRepository;
     private final ResupplyDeliveryProducer resupplyDeliveryProducer;
-    public void createResupplyOrder(List<ResupplyOrderLineDto> productsToResupplyDtos) throws InterruptedException {
+    public void createAndSendResupplyOrder(List<ResupplyOrderLineDto> productsToResupplyDtos) throws InterruptedException {
         ResupplyOrder resupplyOrder = new ResupplyOrder();
         resupplyOrder.setSupplyNumber(UUID.randomUUID().toString());
 
