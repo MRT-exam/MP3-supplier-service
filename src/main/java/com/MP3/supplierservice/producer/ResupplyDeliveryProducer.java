@@ -11,6 +11,6 @@ public class ResupplyDeliveryProducer {
     private KafkaTemplate<String, ResupplyDeliveryEvent> kafkaTemplate;
 
     public void produce(ResupplyDeliveryEvent event) {
-        kafkaTemplate.send("inventoryDeliveryTopic", event);
+        kafkaTemplate.send("resupplyDeliveryTopic", event);
     }
 }

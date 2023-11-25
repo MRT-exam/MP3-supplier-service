@@ -13,7 +13,7 @@ import java.util.List;
 public class RequestResupplyConsumer {
     private final SupplierService supplierService;
 
-    @KafkaListener(topics = "inventoryRestockTopic")
+    @KafkaListener(topics = "inventoryResupplyTopic")
     public void consume(RequestResupplyEvent event) throws InterruptedException {
         // Call ProductService and update quantities in stock in DB
         List<ResupplyOrderLineDto> productsToResupplyDtos = event.getResupplyOrderLineDtos();

@@ -12,18 +12,19 @@ public class KafkaTopicConfig {
     @Value(value = "${spring.kafka.bootstrap-servers}")
     private String bootstrapAddress;
 
-
+    // Consuming Topics
     @Bean
-    public NewTopic inventoryRestockTopic() {
-        return TopicBuilder.name("inventoryRestockTopic")
+    public NewTopic inventoryResupplyTopic() {
+        return TopicBuilder.name("inventoryResupplyTopic")
                 .partitions(1)
                 .replicas(1)
                 .build();
     }
 
+    // Producing Topics
     @Bean
-    public NewTopic inventoryDeliveryTopic() {
-        return TopicBuilder.name("inventoryDeliveryTopic")
+    public NewTopic resupplyDeliveryTopic() {
+        return TopicBuilder.name("resupplyDeliveryTopic")
                 .partitions(1)
                 .replicas(1)
                 .build();
