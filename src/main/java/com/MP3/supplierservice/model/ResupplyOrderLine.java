@@ -9,7 +9,7 @@ import lombok.*;
 @Builder
 @Table(name = "supply_item")
 @Entity
-public class SupplyItem {
+public class ResupplyOrderLine {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;

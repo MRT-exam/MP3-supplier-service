@@ -7,8 +7,8 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class SupplyItemDto {
+public class ResupplyOrderLineDto {
     private int id;
     private String productName;
-    private int supplyQuantity;
+    private int resupplyQuantity;
 }

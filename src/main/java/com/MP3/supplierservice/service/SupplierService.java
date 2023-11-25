@@ -1,9 +1,11 @@
 package com.MP3.supplierservice.service;
 
-import com.MP3.supplierservice.dto.SupplyItemDto;
-import com.MP3.supplierservice.event.ResupplyEvent;
-import com.MP3.supplierservice.model.Supply;
-import com.MP3.supplierservice.model.SupplyItem;
+import com.MP3.supplierservice.dto.ResupplyOrderLineDto;
+import com.MP3.supplierservice.event.RequestResupplyEvent;
+import com.MP3.supplierservice.event.ResupplyDeliveryEvent;
+import com.MP3.supplierservice.model.ResupplyOrder;
+import com.MP3.supplierservice.model.ResupplyOrderLine;
+import com.MP3.supplierservice.producer.ResupplyDeliveryProducer;
 import com.MP3.supplierservice.repository.SupplierRepository;
 import enums.DeliveryStatus;
 import lombok.RequiredArgsConstructor;
@@ -19,53 +21,69 @@ import java.util.stream.Stream;
 public class SupplierService {
 
     private final SupplierRepository supplierRepository;
-    public Supply createSupply(ResupplyEvent resupplyEvent) {
-        Supply supply = new Supply();
-        supply.setSupplyNumber(UUID.randomUUID().toString());
-        Stream<SupplyItemDto> supplyItemDtoStream = resupplyEvent.getSupplyItemDtos().stream();
+    private final ResupplyDeliveryProducer resupplyDeliveryProducer;
+    public void createResupplyOrder(List<ResupplyOrderLineDto> productsToResupplyDtos) throws InterruptedException {
+        ResupplyOrder resupplyOrder = new ResupplyOrder();
+        resupplyOrder.setSupplyNumber(UUID.randomUUID().toString());
 
-        List<SupplyItem> supplyItems = supplyItemDtoStream
+        List<ResupplyOrderLine> resupplyOrderLines = productsToResupplyDtos
+                .stream()
                 .map(this::mapFromDto)
-                        .toList();
-        supply.setSupplyItems(supplyItems);
-
-        supplierRepository.save(supply);
-        return supply;
+                .toList();
+        // Removes resupplyOrderLines already ordered for restock
+        removeOrderLinesAlreadyOrdered(resupplyOrderLines);
+        resupplyOrder.setResupplyOrderLines(resupplyOrderLines);
+        supplierRepository.save(resupplyOrder);
+        // Waiting for delivery
+        Thread.sleep(5000);
+        ResupplyDeliveryEvent resupplyDeliveryEvent = new ResupplyDeliveryEvent();
+        resupplyDeliveryEvent.setResupplyDeliveryItems(resupplyOrderLines
+                .stream()
+                .map(this::mapToDto)
+                .toList());
+        // Send delivery to inventory service and update ResupplyOrder's Status
+        resupplyDeliveryProducer.produce(resupplyDeliveryEvent);
+        resupplyOrder.setStatus(DeliveryStatus.DELIVERED);
+        supplierRepository.save(resupplyOrder);
     }
 
-    public void removeSupplyItemsAlreadyOrdered(ResupplyEvent resupplyEvent) {
-
-        // Retrieves the supplies from the DB with status ORDERED
-        List<Supply> suppliesNotDelivered = supplierRepository.findAll()
+    private void removeOrderLinesAlreadyOrdered(List<ResupplyOrderLine> resupplyOrderLines) {
+        List<ResupplyOrder> resupplyOrdersNotDelivered = supplierRepository.findAll()
                 .stream()
-                .filter(supply -> supply.getStatus() == DeliveryStatus.ORDERED)
+                .filter(resupplyOrder -> resupplyOrder.getStatus() == DeliveryStatus.ORDERED)
                 .toList();
 
-        // Retrieves the supplyItemIds in all suppliesNotDelivered
-        List<Integer> supplyItemIdsNotDelivered = new ArrayList<>();
-        addChildren(suppliesNotDelivered, supplyItemIdsNotDelivered);
+        List<Integer> resupplyOrderLinesIdsToRemove = new ArrayList<>();
+        addChildrenIdsToList(resupplyOrdersNotDelivered, resupplyOrderLinesIdsToRemove);
 
-        resupplyEvent.getSupplyItemDtos()
-                .stream()
-                .filter(supplyItemDto -> supplyItemIdsNotDelivered
-                        .contains(supplyItemDto.getId()))
-                .toList();
+        resupplyOrderLines.removeIf(resupplyOrderLine ->
+                resupplyOrderLinesIdsToRemove.contains(resupplyOrderLine.getId()));
     }
 
-    private void addChildren(List<Supply> supplies, List<Integer> supplyItemIds) {
-        if (supplies != null && supplies.size() > 0) {
-            for (Supply supply: supplies) {
-                supplyItemIds.addAll(supply.getSupplyItems()
+
+    private void addChildrenIdsToList(List<ResupplyOrder> resupplyOrders, List<Integer> resupplyOrderLineIds) {
+        if (resupplyOrders != null && resupplyOrders.size() > 0) {
+            for (ResupplyOrder resupplyOrder : resupplyOrders) {
+                resupplyOrderLineIds.addAll(resupplyOrder.getResupplyOrderLines()
                         .stream()
-                        .map(SupplyItem::getId)
+                        .map(ResupplyOrderLine::getId)
                         .toList());
             }
         }
     }
-    private SupplyItem mapFromDto(SupplyItemDto supplyItemDto) {
-        SupplyItem supplyItem = new SupplyItem();
-        supplyItem.setProductName(supplyItemDto.getProductName());
-        supplyItem.setSupplyQuantity(supplyItem.getSupplyQuantity());
-        return supplyItem;
+    private ResupplyOrderLine mapFromDto(ResupplyOrderLineDto resupplyOrderLineDto) {
+        ResupplyOrderLine resupplyOrderLine = new ResupplyOrderLine();
+        resupplyOrderLine.setId(resupplyOrderLineDto.getId());
+        resupplyOrderLine.setProductName(resupplyOrderLineDto.getProductName());
+        resupplyOrderLine.setSupplyQuantity(resupplyOrderLine.getSupplyQuantity());
+        return resupplyOrderLine;
+    }
+
+    private ResupplyOrderLineDto mapToDto(ResupplyOrderLine resupplyOrderLine) {
+        ResupplyOrderLineDto resupplyOrderLineDto = new ResupplyOrderLineDto();
+        resupplyOrderLineDto.setId(resupplyOrderLine.getId());
+        resupplyOrderLineDto.setProductName(resupplyOrderLine.getProductName());
+        resupplyOrderLineDto.setResupplyQuantity(resupplyOrderLine.getSupplyQuantity());
+        return resupplyOrderLineDto;
     }
 }

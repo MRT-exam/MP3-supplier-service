@@ -12,12 +12,12 @@ import java.util.List;
 @Builder
 @Entity
 @Table(name = "supply")
-public class Supply {
+public class ResupplyOrder {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
     private String supplyNumber;
     @OneToMany(cascade = CascadeType.ALL)
-    private List<SupplyItem> supplyItems;
+    private List<ResupplyOrderLine> resupplyOrderLines;
     private DeliveryStatus status;
 }
