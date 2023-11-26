@@ -33,6 +33,7 @@ public class SupplierService {
         // Removes resupplyOrderLines already ordered for restock
         removeOrderLinesAlreadyOrdered(resupplyOrderLines);
         resupplyOrder.setResupplyOrderLines(resupplyOrderLines);
+        // TODO: Check if there are any orderlines otherwise cancel resupplyOrder creation
         supplierRepository.save(resupplyOrder);
         // Waiting for delivery
         Thread.sleep(5000);
