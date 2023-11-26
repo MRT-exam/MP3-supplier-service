@@ -1,6 +1,6 @@
 package com.MP3.supplierservice.model;
 
-import enums.DeliveryStatus;
+import com.MP3.supplierservice.enums.DeliveryStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
